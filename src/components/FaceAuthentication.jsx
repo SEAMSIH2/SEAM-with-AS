@@ -16,12 +16,15 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [match, setMatch] = useState(null);
   const [cameraError, setCameraError] = useState(null);
+  const [isSpoofDetected, setIsSpoofDetected] = useState(false);
+  const [spoofMessage, setSpoofMessage] = useState("");
   const [facesStatus, setFacesStatus] = useState("no-face");
   const [isFaceMatcherLoaded, setIsFaceMatcherLoaded] = useState(false);
   const [aadhaarNumber, setAadhaarNumber] = useState("");
   const [isValidAadhaar, setIsValidAadhaar] = useState(false);
+  const [lastDetection, setLastDetection] = useState(null);
   const [linkedFace, setLinkedFace] = useState(null);
-
+  const [lastFaceDetectionTime, setLastFaceDetectionTime] = useState(null);
   const handleAadhaarChange = (e) => {
     const value = e.target.value.replace(/\s+/g, ""); // Remove spaces
     if (/^\d{0,12}$/.test(value)) {
@@ -99,13 +102,70 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
     } else {
       setFacesStatus("multiple-faces"); // Updated for 2 or more faces
     }
+    checkForSpoof(detections);
+  };
+
+  const checkForSpoof = (detections) => {
+    if (detections.length === 0) return;
+
+    const detection = detections[0];
+    const { landmarks } = detection;
+
+    const leftEye = landmarks.getLeftEye();
+    const rightEye = landmarks.getRightEye();
+    const nose = landmarks.getNose();
+    const jaw = landmarks.getJawOutline();
+
+    // Calculate eye openness for blinking detection
+    const calculateEyeOpenness = (eye) => {
+      const verticalDistance =
+        Math.sqrt(
+          Math.pow(eye[1].x - eye[5].x, 2) + Math.pow(eye[1].y - eye[5].y, 2)
+        ) +
+        Math.sqrt(
+          Math.pow(eye[2].x - eye[4].x, 2) + Math.pow(eye[2].y - eye[4].y, 2)
+        );
+      const horizontalDistance = Math.sqrt(
+        Math.pow(eye[0].x - eye[3].x, 2) + Math.pow(eye[0].y - eye[3].y, 2)
+      );
+      return verticalDistance / horizontalDistance; // Eye aspect ratio
+    };
+
+    const leftEyeOpenness = calculateEyeOpenness(leftEye);
+    const rightEyeOpenness = calculateEyeOpenness(rightEye);
+    const isBlinking = leftEyeOpenness < 0.47 || rightEyeOpenness < 0.47; // Blink threshold
+
+    // Detect head movement by analyzing the nose position relative to the face
+    const headMovementDetected =
+      lastFaceDetectionTime &&
+      Math.abs(nose[0].x - (lastDetection?.nose?.x || 0)) > 3;
+
+    const currentTime = new Date().getTime();
+
+    if (isBlinking) {
+      setSpoofMessage("Blink detected. Face appears genuine.");
+      setIsSpoofDetected(false);
+    } else if (
+      !headMovementDetected &&
+      currentTime - lastFaceDetectionTime > 5000
+    ) {
+      setSpoofMessage("Static face detected! Possible spoof attempt.");
+      setIsSpoofDetected(true);
+    } else {
+      setSpoofMessage("Head movement detected. Face appears genuine.");
+      setIsSpoofDetected(false);
+    }
+
+    // Save last detection data for comparison in the next frame
+    setLastFaceDetectionTime(currentTime);
+    setLastDetection({ nose });
   };
 
   // Run face detection every 500ms
   useEffect(() => {
     const intervalId = setInterval(() => {
       handleFaceDetection();
-    }, 500); // Checking for face detection every 500ms
+    }, 100); // Checking for face detection every 100ms
 
     return () => clearInterval(intervalId); // Cleanup on component unmount
   }, []);
@@ -310,6 +370,31 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
               </Box>
             )}
           </Box>
+          {spoofMessage && (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                border: "2px solid",
+                borderColor: isSpoofDetected ? "red" : "#00C853",
+                borderRadius: "8px",
+                padding: "10px",
+                backgroundColor: "#ffffff",
+              }}
+            >
+              <Box
+                sx={{
+                  color: isSpoofDetected ? "red" : "#00C853",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <WarningIcon sx={{ mr: 1 }} />
+                <Typography variant="body2">{spoofMessage}</Typography>
+              </Box>
+            </Box>
+          )}
         </Box>
       </Box>
 
@@ -402,7 +487,8 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
             isAuthenticating ||
             cameraError ||
             facesStatus !== "one-face" ||
-            !isFaceMatcherLoaded
+            !isFaceMatcherLoaded ||
+            isSpoofDetected
           }
           startIcon={<CameraAltIcon />}
           sx={{
