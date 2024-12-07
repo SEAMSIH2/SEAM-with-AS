@@ -138,7 +138,7 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
     // Detect head movement by analyzing the nose position relative to the face
     const headMovementDetected =
       lastFaceDetectionTime &&
-      Math.abs(nose[0].x - (lastDetection?.nose?.x || 0)) > 3;
+      Math.abs(nose[0].x - (lastDetection?.nose?.x || 0)) > 1;
 
     const currentTime = new Date().getTime();
 
