@@ -133,7 +133,7 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
 
     const leftEyeOpenness = calculateEyeOpenness(leftEye);
     const rightEyeOpenness = calculateEyeOpenness(rightEye);
-    const isBlinking = leftEyeOpenness < 0.47 || rightEyeOpenness < 0.47; // Blink threshold
+    const isBlinking = leftEyeOpenness < 0.48 || rightEyeOpenness < 0.48; // Blink threshold
 
     // Detect head movement by analyzing the nose position relative to the face
     const headMovementDetected =
@@ -487,7 +487,8 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
             isAuthenticating ||
             cameraError ||
             facesStatus !== "one-face" ||
-            !isFaceMatcherLoaded
+            !isFaceMatcherLoaded ||
+            isSpoofDetected
           }
           startIcon={<CameraAltIcon />}
           sx={{
