@@ -487,8 +487,7 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
             isAuthenticating ||
             cameraError ||
             facesStatus !== "one-face" ||
-            !isFaceMatcherLoaded ||
-            isSpoofDetected
+            !isFaceMatcherLoaded
           }
           startIcon={<CameraAltIcon />}
           sx={{
