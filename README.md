@@ -1,4 +1,4 @@
-# Face Authentication System Using SEAM
+# SEAM- SECURE ENCYPTION AND AUTHENTICATION MODEL
 
 This is a React-based face authentication system leveraging the face-api.js library for facial recognition. It integrates with a webcam to capture and verify faces against a registered database (e.g., linked to Aadhaar numbers) and provides real-time feedback, including spoof detection mechanisms.
 
