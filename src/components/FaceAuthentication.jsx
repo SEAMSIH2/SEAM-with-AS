@@ -473,6 +473,22 @@ const FaceAuthentication = ({ registeredFaces, onAuthenticated }) => {
                 objectFit: "cover",
               }}
             />
+
+            {/* Overlay for the green dotted rectangle */}
+            <div
+              style={{
+                position: "absolute",
+                top: "43%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                width: "60%",
+                height: "60%",
+                border: "2px dashed #00C853",
+                borderRadius: "8px",
+                boxSizing: "border-box",
+                pointerEvents: "none", // Ensures it doesn't interfere with user interactions
+              }}
+            />
           </Box>
         )}
 
